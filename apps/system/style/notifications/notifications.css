@@ -82,7 +82,6 @@
 #notification-bar button {
   float: right;
   margin-right: 1.5rem;
-  width: 30%;
   height: 3rem;
   padding: 0;
   border: 0;
@@ -104,8 +103,7 @@
 #notifications-container {
   width: 100%;
 
-  /* minus cost control, quick settings, bar and grippy */
-  height: calc(100% - 4.5rem - 6rem - 3rem - 2rem);
+  flex: 1;
   overflow-y: scroll;
   overflow-x: hidden;
 }
@@ -141,12 +139,12 @@ div:not(#notifications-lockscreen-container) > .notification:after{
   pointer-events: none;
 }
 
-.notification > div:first-of-type {
-  width: calc(100% - 12rem);
+.notification > div.title-container {
   margin-top: 1rem;
   font-size: 1.5rem;
   font-weight: 500;
   color: #fff;
+  display: flex;
 }
 
 .notification > div {
@@ -161,14 +159,13 @@ div:not(#notifications-lockscreen-container) > .notification:after{
   white-space: nowrap;
 }
 
-.notification > .timestamp {
-  position: absolute;
+.notification > div.title-container .timestamp {
+  flex: initial;
   top: -.2rem;
   right: 1.5rem;
   color: #52B6CC;
-  margin-top: 1.3rem;
   padding: 0;
-  display: inline;
+  max-width: 6.5rem;
   font-size: 1.2rem;
   font-weight: bold;
   line-height: 1.6rem;
@@ -186,6 +183,14 @@ div:not(#notifications-lockscreen-container) > .notification:after{
   pointer-events: none;
 }
 
+.notification > div.title-container .title {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-right: .5rem;
+}
+
 .notification.disappearing,
 #notification-toaster.disappearing {
   transition: transform 0.3s linear;
@@ -195,75 +200,6 @@ div:not(#notifications-lockscreen-container) > .notification:after{
 .notification.disappearing ~ .notification {
   transition: transform 0.3s linear;
   transform: translateY(-6.2rem);
-}
-
-#notifications-lockscreen-container {
-  z-index: 1;
-  position: absolute;
-  top: 18.2rem;
-  left: 0;
-  width: 100%;
-  max-height: calc(100% - 29.8rem);
-  overflow-x: hidden;
-  overflow-y: auto;
-
-  background-color: transparent;
-}
-
-#notifications-lockscreen-container.collapsed {
-  max-height: calc(100% - 41rem);
-}
-
-#notifications-lockscreen-container .notification {
-  background-color: transparent;
-  border-top: none;
-  border-bottom: 0.1rem solid rgba(255, 255, 255, 0.3);
-  height: 4.8rem;
-  width: calc(100% - 6rem);
-  margin-left: 2.4rem;
-  margin-right: 2.4rem;
-}
-
-#notifications-lockscreen-container .notification:first-child {
-  border-top: none;
-}
-
-#notifications-lockscreen-container .notification:last-child {
-  border-bottom: none;
-}
-
-#notifications-lockscreen-container .notification > div {
-  width: calc(100% - 3.6rem);
-  margin-left: 3.6rem;
-  color: #ffffff;
-}
-
-#notifications-lockscreen-container .notification > div:first-of-type {
-  width: calc(100% - 9.6rem);
-  font-size: 1.4rem;
-}
-
-#notifications-lockscreen-container .notification > div.detail {
-  margin-top: 0.2rem;
-}
-
-#notifications-lockscreen-container .notification > .timestamp {
-  position: absolute;
-  top: 0.1rem;
-  right: 0;
-  margin-top: 0;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 1.4rem;
-  font-style: italic;
-  font-weight: 400;
-  overflow: hidden;
-}
-
-#notifications-lockscreen-container .notification > img {
-  margin-top: 0.8rem;
-  margin-left: 0;
-  width: 2.4rem;
-  height: 2.4rem;
 }
 
 @keyframes fn-rotate {
@@ -307,7 +243,12 @@ html[dir="rtl"] .notification > div {
   text-align: right;
 }
 
-html[dir="rtl"] .notification > .timestamp {
+html[dir="rtl"] .notification > div.title-container .title {
+  margin-right: 0;
+  margin-left: .5rem;
+}
+
+html[dir="rtl"] .notification > div.title-container .timestamp {
   left: 1.5rem;
   right: auto;
 }
@@ -321,7 +262,7 @@ html[dir="rtl"] #notifications-lockscreen-container .notification > div {
   margin-right: 3.6rem;
 }
 
-html[dir="rtl"] #notifications-lockscreen-container .notification > .timestamp {
+html[dir="rtl"] #notifications-lockscreen-container .notification > div.title-container .timestamp {
   left: 0;
   right: auto;
 }

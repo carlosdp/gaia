@@ -370,6 +370,7 @@ class GaiaData(object):
         return files
 
     def send_sms(self, number, message):
+        self.marionette.switch_to_frame()
         import json
         number = json.dumps(number)
         message = json.dumps(message)
@@ -530,12 +531,15 @@ class GaiaDevice(object):
         self.marionette.wait_for_port()
         self.marionette.start_session()
 
-        # Wait for the homescreen to finish loading
-        Wait(self.marionette, timeout).until(expected.element_present(
-            By.CSS_SELECTOR, '#homescreen[loading-state=false]'))
+        self.wait_for_b2g_ready(timeout)
 
         # Reset the storage path for desktop B2G
         self._set_storage_path()
+
+    def wait_for_b2g_ready(self, timeout):
+        # Wait for the homescreen to finish loading
+        Wait(self.marionette, timeout).until(expected.element_present(
+            By.CSS_SELECTOR, '#homescreen[loading-state=false]'))
 
     @property
     def is_b2g_running(self):
@@ -589,11 +593,11 @@ class GaiaDevice(object):
 
     def touch_home_button(self):
         apps = GaiaApps(self.marionette)
-        if apps.displayed_app.name.lower() != 'home screen':
+        if apps.displayed_app.name.lower() != 'homescreen':
             # touching home button will return to homescreen
             self._dispatch_home_button_event()
             Wait(self.marionette).until(
-                lambda m: apps.displayed_app.name.lower() == 'home screen')
+                lambda m: apps.displayed_app.name.lower() == 'homescreen')
             apps.switch_to_displayed_app()
         else:
             apps.switch_to_displayed_app()
@@ -639,6 +643,39 @@ class GaiaDevice(object):
         result = self.marionette.execute_async_script('GaiaLockScreen.unlock()')
         assert result, 'Unable to unlock screen'
 
+    def change_orientation(self, orientation):
+        """  There are 4 orientation states which the phone can be passed in:
+        portrait-primary(which is the default orientation), landscape-primary, portrait-secondary and landscape-secondary
+        """
+        self.marionette.execute_async_script("""
+            if (arguments[0] === arguments[1]) {
+              marionetteScriptFinished();
+            }
+            else {
+              var expected = arguments[1];
+              window.screen.onmozorientationchange = function(e) {
+                console.log("Received 'onmozorientationchange' event.");
+                waitFor(
+                  function() {
+                    window.screen.onmozorientationchange = null;
+                    marionetteScriptFinished();
+                  },
+                  function() {
+                    return window.screen.mozOrientation === expected;
+                  }
+                );
+              };
+              console.log("Changing orientation to '" + arguments[1] + "'.");
+              window.screen.mozLockOrientation(arguments[1]);
+            };""", script_args=[self.screen_orientation, orientation])
+
+    @property
+    def screen_width(self):
+        return self.marionette.execute_script('return window.screen.width')
+
+    @property
+    def screen_orientation(self):
+        return self.marionette.execute_script('return window.screen.mozOrientation')
 
 class GaiaTestCase(MarionetteTestCase, B2GTestCaseMixin):
     def __init__(self, *args, **kwargs):
@@ -832,40 +869,6 @@ class GaiaTestCase(MarionetteTestCase, B2GTestCaseMixin):
 
     def resource(self, filename):
         return os.path.abspath(os.path.join(os.path.dirname(__file__), 'resources', filename))
-
-    def change_orientation(self, orientation):
-        """  There are 4 orientation states which the phone can be passed in:
-        portrait-primary(which is the default orientation), landscape-primary, portrait-secondary and landscape-secondary
-        """
-        self.marionette.execute_async_script("""
-            if (arguments[0] === arguments[1]) {
-              marionetteScriptFinished();
-            }
-            else {
-              var expected = arguments[1];
-              window.screen.onmozorientationchange = function(e) {
-                console.log("Received 'onmozorientationchange' event.");
-                waitFor(
-                  function() {
-                    window.screen.onmozorientationchange = null;
-                    marionetteScriptFinished();
-                  },
-                  function() {
-                    return window.screen.mozOrientation === expected;
-                  }
-                );
-              };
-              console.log("Changing orientation to '" + arguments[1] + "'.");
-              window.screen.mozLockOrientation(arguments[1]);
-            };""", script_args=[self.screen_orientation, orientation])
-
-    @property
-    def screen_width(self):
-        return self.marionette.execute_script('return window.screen.width')
-
-    @property
-    def screen_orientation(self):
-        return self.marionette.execute_script('return window.screen.mozOrientation')
 
     def wait_for_element_present(self, by, locator, timeout=None):
         return Wait(self.marionette, timeout, ignored_exceptions=NoSuchElementException).until(

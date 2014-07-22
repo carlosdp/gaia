@@ -2,14 +2,16 @@
 
 /* globals MocksHelper, MockBluetooth, MockNavigatorSettings,
            NDEF, NfcConnectSystemDialog, MockBluetoothTransfer,
-           NfcManager, NfcHandoverManager, NDEFUtils,
+           MockL10n, NfcManager, NfcHandoverManager, NDEFUtils,
            MockMozNfc, NfcUtils, MockNavigatormozSetMessageHandler */
 
 require('/shared/test/unit/mocks/mock_navigator_moz_set_message_handler.js');
 require('/shared/test/unit/mocks/mock_settings_listener.js');
 require('/shared/test/unit/mocks/mock_moz_ndefrecord.js');
 require('/shared/test/unit/mocks/mock_moz_nfc.js');
+require('/shared/test/unit/mocks/mock_l10n.js');
 require('/shared/js/nfc_utils.js');
+require('/shared/test/unit/mocks/mock_notification_helper.js');
 requireApp('system/test/unit/mock_settingslistener_installer.js');
 requireApp('system/test/unit/mock_system_nfc_connect_dialog.js');
 requireApp('system/shared/test/unit/mocks/mock_event_target.js');
@@ -23,7 +25,8 @@ var mocksForNfcUtils = new MocksHelper([
   'MozActivity',
   'BluetoothTransfer',
   'MozNDEFRecord',
-  'NfcConnectSystemDialog'
+  'NfcConnectSystemDialog',
+  'NotificationHelper'
 ]).init();
 
 suite('Nfc Handover Manager Functions', function() {
@@ -32,7 +35,7 @@ suite('Nfc Handover Manager Functions', function() {
   var realMozSettings;
   var realMozBluetooth;
   var realMozSetMessageHandler;
-
+  var realL10n;
   var spyDefaultAdapter;
 
   mocksForNfcUtils.attachTestHelpers();
@@ -42,11 +45,13 @@ suite('Nfc Handover Manager Functions', function() {
     realMozSettings = navigator.mozSettings;
     realMozBluetooth = navigator.mozBluetooth;
     realMozSetMessageHandler = navigator.mozSetMessageHandler;
+    realL10n = navigator.mozL10n;
 
     navigator.mozNfc = MockMozNfc;
     navigator.mozSettings = MockNavigatorSettings;
     navigator.mozBluetooth = MockBluetooth;
     navigator.mozSetMessageHandler = MockNavigatormozSetMessageHandler;
+    navigator.mozL10n = MockL10n;
 
     MockNavigatormozSetMessageHandler.mSetup();
 
@@ -64,6 +69,7 @@ suite('Nfc Handover Manager Functions', function() {
     navigator.mozSettings = realMozSettings;
     navigator.mozBluetooth = realMozBluetooth;
     navigator.mozSetMessageHandler = realMozSetMessageHandler;
+    navigator.mozL10n = realL10n;
   });
 
   setup(function() {
@@ -257,6 +263,27 @@ suite('Nfc Handover Manager Functions', function() {
       assert.equal(spyNotify.firstCall.args[0], 1);
     });
 
+    test('Aborts when getNFCPeer() fails during file send.', function() {
+      fileRequest.sessionToken = fileRequest.session;
+      var stubGetPeer = this.sinon.stub(MockMozNfc, 'getNFCPeer').throws();
+      var spyNotify = this.sinon.spy(MockMozNfc, 'notifySendFileStatus');
+      MockNavigatormozSetMessageHandler.mTrigger(
+        'nfc-manager-send-file', fileRequest);
+      assert.isTrue(stubGetPeer.calledOnce);
+      assert.isTrue(spyNotify.calledOnce);
+      assert.equal(spyNotify.firstCall.args[0], 1);
+    });
+
+    test('Aborts when getNFCPeer() fails during file receive.', function() {
+      var cps = NDEF.CPS_ACTIVE;
+      var mac = '01:23:45:67:89:AB';
+      var handoverRequest = NDEFUtils.encodeHandoverRequest(mac, cps);
+      var stubGetPeer = this.sinon.stub(MockMozNfc, 'getNFCPeer').throws();
+      NfcHandoverManager._handleHandoverRequest(handoverRequest);
+      assert.isTrue(stubGetPeer.calledOnce);
+      assert.isTrue(spySendNDEF.notCalled);
+    });
+
     test('Handover select results in file being transmitted over Bluetooth',
       function() {
 
@@ -325,6 +352,7 @@ suite('Nfc Handover Manager Functions', function() {
     var mockFileRequest;
 
     setup(function() {
+      this.sinon.useFakeTimers();
       realBluetoothTransfer = window.BluetoothTransfer;
       window.BluetoothTransfer = window.MockBluetoothTransfer;
 
@@ -429,8 +457,35 @@ suite('Nfc Handover Manager Functions', function() {
       assert.isFalse(spyBluetoothEnabledObserver.getCall(1)
                                                 .args[0].settingValue);
     });
+
+    test('Timeout outgoing file transfer', function() {
+      MockBluetooth.enabled = true;
+      MockBluetoothTransfer.sendFileQueueEmpty = true;
+      var spyCancel = this.sinon.spy(NfcHandoverManager,
+                                     '_cancelSendFileTransfer');
+
+      initiateFileTransfer();
+      assert.isTrue(MockBluetooth.enabled);
+      this.sinon.clock.tick(NfcHandoverManager.responseTimeoutMillis);
+      assert.isTrue(spyCancel.calledOnce);
+    });
+
+    test('Timeout incoming file transfer', function() {
+      var cps = NDEF.CPS_ACTIVE;
+      var mac = '01:23:45:67:89:AB';
+      var session = 'session-1';
+      var handoverRequest = NDEFUtils.encodeHandoverRequest(mac, cps);
+      MockBluetooth.enabled = true;
+      MockBluetoothTransfer.sendFileQueueEmpty = true;
+      var spyCancel = sinon.spy(NfcHandoverManager,
+                                '_cancelIncomingFileTransfer');
+
+      NfcHandoverManager._handleHandoverRequest(handoverRequest, session);
+      this.sinon.clock.tick(NfcHandoverManager.responseTimeoutMillis);
+      assert.isTrue(spyCancel.calledOnce);
+    });
   });
-  
+
   suite('tryHandover', function() {
     var session = 'sessionToken';
 

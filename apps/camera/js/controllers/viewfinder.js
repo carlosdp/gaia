@@ -25,7 +25,6 @@ module.exports.ViewfinderController = ViewfinderController;
  * @param {App} app
  */
 function ViewfinderController(app) {
-  debug('initializing');
   bindAll(this);
   this.app = app;
   this.views = {};
@@ -108,8 +107,8 @@ ViewfinderController.prototype.bindEvents = function() {
   this.app.on('camera:focusstatechanged', this.views.focus.setFocusState);
   this.app.on('camera:facesdetected', this.onFacesDetected);
   this.app.on('camera:shutter', this.views.viewfinder.shutter);
-  this.app.on('camera:busy', this.views.viewfinder.disable);
-  this.app.on('camera:ready', this.views.viewfinder.enable);
+  this.app.on('busy', this.views.viewfinder.disable);
+  this.app.on('ready', this.views.viewfinder.enable);
   this.app.on('camera:configured', this.onCameraConfigured);
   this.app.on('previewgallery:opened', this.onGalleryOpened);
   this.app.on('previewgallery:closed', this.onGalleryClosed);

@@ -46,7 +46,8 @@ suite('system/AppWindowManager', function() {
     window.layoutManager = new window.LayoutManager();
 
     home = new HomescreenWindow('fakeHome');
-    window.homescreenLauncher = new HomescreenLauncher().start();
+    window.homescreenLauncher = new HomescreenLauncher();
+    window.homescreenLauncher.start();
     homescreenLauncher.mFeedFixtures({
       mHomescreenWindow: home,
       mOrigin: 'fakeOrigin',
@@ -192,6 +193,22 @@ suite('system/AppWindowManager', function() {
       });
       assert.isTrue(stub_updateActiveApp.calledWith(home.instanceID));
     });
+
+    test('Topmost app should be notified about inputmethod-contextchange ' +
+      'mozChromeEvent', function() {
+        var stubInputMethodContextChange = this.sinon.stub(app1, 'broadcast');
+        var detail = {
+          type: 'inputmethod-contextchange'
+        };
+        this.sinon.stub(app1, 'getTopMostWindow').returns(app1);
+        AppWindowManager._activeApp = app1;
+        AppWindowManager.handleEvent({
+          type: 'mozChromeEvent',
+          detail: detail
+        });
+        assert.isTrue(stubInputMethodContextChange.calledWith(
+          'inputmethod-contextchange', detail));
+      });
 
     test('When permission dialog is closed, we need to focus the active app',
       function() {
@@ -411,6 +428,34 @@ suite('system/AppWindowManager', function() {
       });
 
       assert.isTrue(stubSetVisible.calledWith(true));
+    });
+
+    test('Show top window than fire activity when there is an request',
+    function() {
+      injectRunningApps(app1);
+      AppWindowManager._activeApp = app1;
+      MockAttentionScreen.mFullyVisible = false;
+      var stubSetVisible = this.sinon.stub(app1, 'setVisible');
+      var stubActivity = this.sinon.stub();
+      var originalActivity = window.MozActivity;
+      window.MozActivity = stubActivity;
+
+      AppWindowManager.handleEvent({
+        type: 'showwindow',
+        detail: {
+          activity: {
+            name: 'record',
+            data: {
+              type: 'photos'
+            }
+          }
+        }
+      });
+
+      assert.isTrue(stubSetVisible.calledWith(true));
+      assert.isTrue(stubActivity.called,
+        'it didn\'t invoke the activity');
+      window.MozActivity = originalActivity;
     });
 
     test('Hide top window', function() {
@@ -702,10 +747,10 @@ suite('system/AppWindowManager', function() {
       assert.isTrue(AppWindowManager.continuousTransition);
     });
 
-    test('app-brandcolor.enabled', function() {
-      MockSettingsListener.mCallbacks['app-brandcolor.enabled'](true);
+    test('app-themecolor.enabled', function() {
+      MockSettingsListener.mCallbacks['app-themecolor.enabled'](true);
 
-      assert.isTrue(screenElement.classList.contains('brandcolor-active'));
+      assert.isTrue(screenElement.classList.contains('themecolor-active'));
     });
   });
 

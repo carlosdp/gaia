@@ -106,6 +106,7 @@
   HomescreenWindow.SUB_COMPONENTS = {
     'transitionController': window.AppTransitionController,
     'modalDialog': window.AppModalDialog,
+    'valueSelector': window.ValueSelector,
     'authDialog': window.AppAuthenticationDialog,
     'childWindowFactory': window.ChildWindowFactory
   };
@@ -156,11 +157,6 @@
       // Otherwise wait until next opening request.
       this.kill();
     }
-  };
-
-  HomescreenWindow.prototype.kill = function hw_kill() {
-    this.destroy();
-    this.publish('terminated');
   };
 
   HomescreenWindow.prototype.view = function hw_view() {

@@ -300,6 +300,10 @@
    * @return {Boolean} The instance is active or not.
    */
   AppWindow.prototype.isActive = function aw_isActive() {
+    if (!this.element) {
+      return false;
+    }
+
     if (this.element.classList.contains('will-become-active')) {
       return true;
     }
@@ -388,7 +392,9 @@
       return;
     }
 
-    this._killed = true;
+    if (!this.isHomescreen) {
+      this._killed = true;
+    }
 
     if (DEBUG) {
       AppWindow[this.instanceID] = null;
@@ -650,6 +656,7 @@
   AppWindow.SUB_COMPONENTS = {
     'transitionController': window.AppTransitionController,
     'modalDialog': window.AppModalDialog,
+    'valueSelector': window.ValueSelector,
     'authDialog': window.AppAuthenticationDialog,
     'contextmenu': window.BrowserContextMenu,
     'childWindowFactory': window.ChildWindowFactory,
@@ -900,11 +907,22 @@
 
   AppWindow.prototype._handle_mozbrowsermetachange =
     function aw__handle_mozbrowsermetachange(evt) {
-      if (evt.detail.name === 'brand-color') {
-        this.brandColor = evt.detail.content;
-        this.statusbarOverlay.style.backgroundColor = this.brandColor;
-        this.publish('brandcolorchange');
+      var detail = evt.detail;
+      if (detail.name !== 'theme-color' || !detail.type) {
+        return;
       }
+
+      // If the theme-color meta is removed, let's reset the color.
+      var color = '';
+
+      // Otherwise, set it to the color that has been asked.
+      if (detail.type !== 'removed') {
+        color = detail.content;
+      }
+      this.themeColor = color;
+      this.statusbarOverlay.style.backgroundColor = color;
+
+      this.publish('themecolorchange');
     };
 
   AppWindow.prototype._registerEvents = function aw__registerEvents() {
@@ -988,6 +1006,8 @@
 
   AppWindow.prototype.queueShow = function aw_queueShow() {
     this.element.classList.add('will-become-active');
+    // bug 1033921: notify current app changed
+    this.publish('will-become-active');
   };
 
   AppWindow.prototype.cancelQueuedShow = function aw_cancelQueuedShow() {
@@ -996,6 +1016,7 @@
 
   AppWindow.prototype.queueHide = function aw_queueHide() {
     this.element.classList.add('will-become-inactive');
+    this.publish('will-become-inactive');
   };
 
   /**
@@ -1399,7 +1420,7 @@
    * fade out to window to black.
    */
   AppWindow.prototype.fadeOut = function aw__fadeout() {
-    if (!this.isActive()) {
+    if (!this.isActive() && this.element) {
       this.element.classList.add('fadeout');
       this.debug(' fade out >>>> ');
     }

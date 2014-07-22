@@ -22,7 +22,6 @@ module.exports.OverlayController = OverlayController;
  * @param {App} app
  */
 function OverlayController(app) {
-  debug('initializing');
   bindAll(this);
   this.app = app;
   this.activity = app.activity;
@@ -95,7 +94,7 @@ OverlayController.prototype.createOverlay = function(type, callback) {
   var overlay;
 
   if (!this.app.localized()) {
-    this.app.showLoading();
+    this.app.showSpinner();
     this.app.on('localized', onLocalized);
     return;
   }

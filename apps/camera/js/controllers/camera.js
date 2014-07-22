@@ -21,7 +21,6 @@ module.exports.CameraController = CameraController;
  * @param {App} app
  */
 function CameraController(app) {
-  debug('initializing');
   bindAll(this);
   this.app = app;
   this.camera = app.camera;
@@ -58,8 +57,8 @@ CameraController.prototype.bindEvents = function() {
   camera.on('shutter', app.firer('camera:shutter'));
   camera.on('configured', this.onCameraConfigured);
   camera.on('loaded', app.firer('camera:loaded'));
-  camera.on('ready', app.firer('camera:ready'));
-  camera.on('busy', app.firer('camera:busy'));
+  camera.on('ready', app.firer('ready'));
+  camera.on('busy', app.firer('busy'));
 
   // App
   app.on('viewfinder:focuspointchanged', this.onFocusPointChanged);
@@ -68,6 +67,7 @@ CameraController.prototype.bindEvents = function() {
   app.on('previewgallery:opened', this.shutdownCamera);
   app.on('previewgallery:closed', this.onGalleryClosed);
   app.on('storage:changed', this.onStorageChanged);
+  app.on('storage:volumechanged', this.onStorageVolumeChanged);
   app.on('activity:pick', this.onPickActivity);
   app.on('timer:ended', this.capture);
   app.on('visible', this.camera.load);
@@ -342,6 +342,16 @@ CameraController.prototype.onStorageChanged = function(state) {
 };
 
 /**
+ * For instance, when the storage volume changes from to internal memory
+ * to the SD Card
+ *
+ * @private
+ */
+CameraController.prototype.onStorageVolumeChanged = function(storage) {
+  this.camera.setVideoStorage(storage.video);
+};
+
+/**
  * Updates focus area when the user clicks on the viewfinder
  */
 CameraController.prototype.onFocusPointChanged = function(focusPoint) {
@@ -368,12 +378,8 @@ CameraController.prototype.shutdownCamera = function() {
  * @private
  */
 CameraController.prototype.onGalleryClosed = function() {
-  if (this.app.hidden) {
-    return;
-  }
-
-  this.app.showLoading();
-  this.camera.load(this.app.clearLoading);
+  if (this.app.hidden) { return; }
+  this.camera.load(this.app.onReady);
 };
 
 });

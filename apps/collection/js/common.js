@@ -20,12 +20,36 @@
   const mozBgUrl =
     'http://fxos.cdn.mozilla.net/collection/background/{categoryId}' + suffix;
 
+  const APPS_IN_ICON = 3;
 
   function Common() {}
 
   Common.prototype = {
 
+    APPS_IN_ICON: APPS_IN_ICON,
+
     chooseBackgroundRatio: chooseBackgroundRatio,
+
+    b64toBlob: function b64toBlob(b64) {
+      return new Promise((resolve, reject) => {
+        var img = new Image();
+
+        img.onload = function onload() {
+          var canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob(resolve);
+        };
+
+        img.onerror = reject;
+
+        img.src = b64;
+      });
+    },
 
     // TODO
     // add support for 'size' parameter (like getEmeBackground has) to fetch
@@ -38,25 +62,21 @@
 
       var url = mozBgUrl.replace('{categoryId}', collection.categoryId);
       var xhr = new XMLHttpRequest({mozSystem: true});
-      xhr.open('GET', url);
+      xhr.open('GET', url, true);
       xhr.responseType = 'blob';
 
       return new Promise((resolve, reject) => {
         xhr.onload = function onload() {
           if (xhr.status === 200) {
             var blob = new Blob([xhr.response], {type: 'image/jpg'});
-            var reader = new FileReader();
+            eme.log('getMozBackground', 'success', url);
 
-            reader.onload = function onloadend() {
-              eme.log('getMozBackground', 'success', url);
-              resolve({
-                src: reader.result,
-                source: url,
-                checksum: 'mozilla'  // TODO: generate checksum from image data
-              });
-            };
+            resolve({
+              blob: blob,
+              source: url,
+              checksum: 'mozilla'  // TODO: generate checksum from image data
+            });
 
-            reader.readAsDataURL(blob);
           } else {
             reject('xhr.status ' + xhr.status);
           }
@@ -72,7 +92,6 @@
     },
 
     getEmeBackground: function getEmeBackground(collection, size) {
-      var src;
       var checksum;
 
       var options = {
@@ -91,32 +110,37 @@
         checksum = collection.background.checksum;
 
         // when we send _checksum server will not return an image if checksum
-        // was not updated, so check that we really have a background src
-        if (collection.background.src) {
+        // was not updated, so check that we really have background data
+        if (collection.background.blob) {
           options._checksum = checksum;
         }
       }
 
-      return eme.api.Search.bgimage(options).then(function success(response) {
-        if (checksum && checksum === response.checksum) {
-          eme.log('background didn\'t change (checksum match)');
-          return collection.background;
-        } else {
-          var image = response.response.image;
-          if (image) {
-            src = image.data;
-            if (/image\//.test(image.MIMEType)) {  // base64 image data
-              src = 'data:' + image.MIMEType + ';base64,' + image.data;
+      return eme.api.Search.bgimage(options)
+        .then((response) => {
+          if (checksum && checksum === response.checksum) {
+            eme.log('background didn\'t change (checksum match)');
+            return collection.background;
+          } else {
+            var b64;
+            var image = response.response.image;
+            if (image) {
+              b64 = image.data;
+              if (/image\//.test(image.MIMEType)) {  // base64 image data
+                b64 = 'data:' + image.MIMEType + ';base64,' + image.data;
+              }
             }
-          }
 
-          return {
-            src: src,
-            source: response.response.source,
-            checksum: response.checksum || null
-          };
-        }
-      });
+            return this.b64toBlob(b64).then(function toBg(blob) {
+
+              return {
+                blob: blob,
+                source: response.response.source,
+                checksum: response.checksum || null
+              };
+            });
+          }
+        });
     },
 
 
@@ -131,6 +155,48 @@
             }.bind(this))
             .catch(function (e) {
               eme.log('getBackground', 'failed', e);
+            });
+    },
+
+    getWebIcons: function getWebIcons(collection) {
+      var options =
+        (collection.categoryId) ? {categoryId: collection.categoryId} :
+                                  {query: collection.query};
+
+      options.limit = APPS_IN_ICON;
+
+      return eme.api.Apps.search(options).then(response => {
+        var webicons =
+          response.response.apps.slice(0, APPS_IN_ICON).map(app => app.icon);
+
+        return webicons;
+      });
+    },
+
+    /**
+     * prepares the assets needed for rendering a collection's icon:
+     * 1. background
+     * 2. web icons
+     *
+     * returns a promise resolved when all assets requests are done and
+     * updates the collection instance but not the db
+     *
+     */
+    prepareAssets: function prepareAssets(collection) {
+      var ready = Promise.resolve(null);
+
+      var backgroundPromise = collection.backgroundReady ?
+                              ready : this.getBackground(collection);
+
+      var iconsPromise = collection.iconsReady ?
+                              ready : this.getWebIcons(collection);
+
+      return Promise.all([iconsPromise, backgroundPromise])
+            .then((results) => {
+              // results are null if not fetched
+              collection.webicons = results[0] || collection.webicons;
+              collection.background = results[1] || collection.background;
+              return collection;
             });
     }
   };

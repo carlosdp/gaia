@@ -46,7 +46,6 @@ return View.extend({
     this.el.innerHTML = this.template();
     this.els.frameContainer = this.find('.js-frame-container');
     this.els.previewMenu = this.find('.js-preview-menu');
-    this.els.previewControl = this.find('.js-preview');
     this.els.mediaFrame = this.find('.js-media-frame');
     this.els.countText = this.find('.js-count-text');
     this.els.options = this.find('.js-options');
@@ -63,14 +62,21 @@ return View.extend({
     // Update localization strings
     navigator.mozL10n.translate(this.el);
 
-    // MediaFrame has a GestureDetector
-    // that can emit 'tap' events
+    // Configure the MediaFrame component
+    this.configure();
+
+    // Clean up
+    delete this.template;
+
+    debug('rendered');
+    return this.bindEvents();
+  },
+
+  bindEvents: function() {
     bind(this.el, 'tap', this.onTap);
     bind(this.els.header, 'action', this.firer('click:back'));
     bind(this.els.options, 'click', this.onButtonClick);
     bind(this.els.share, 'click', this.onButtonClick);
-
-    this.configure();
     return this;
   },
 
@@ -78,8 +84,9 @@ return View.extend({
     this.currentIndex = this.lastIndex = 0;
 
     this.frame = new MediaFrame(this.els.mediaFrame, true, this.maxPreviewSize);
-    this.frame.video.onplaying = this.handleVideoPlay;
-    this.frame.video.onpaused = this.handleVideoStop;
+    this.frame.video.onloading = this.onVideoLoading;
+    this.frame.video.onplaying = this.onVideoPlaying;
+    this.frame.video.onpaused = this.onVideoPaused;
 
     addPanAndZoomHandlers(this.frame, this.swipeCallback);
   },
@@ -167,7 +174,7 @@ return View.extend({
 
     // First, stop the video if there is one and it is playing.
     if (this.videoPlaying) {
-      this.handleVideoStop();
+      this.onVideoPaused();
     }
 
     // Now animate the item off the screen
@@ -275,16 +282,22 @@ return View.extend({
       video.rotation);
   },
 
-  handleVideoPlay: function() {
+  onVideoLoading: function() {
+    this.emit('loadingvideo', 'loadingVideo');
+  },
+
+  onVideoPlaying: function() {
     if (this.videoPlaying) {
       return;
     }
 
     this.videoPlaying = true;
     this.previewMenuFadeOut();
+
+    this.emit('playingvideo');
   },
 
-  handleVideoStop: function() {
+  onVideoPaused: function() {
     if (!this.videoPlaying) {
       return;
     }

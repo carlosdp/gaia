@@ -248,7 +248,6 @@ apps/keyboard/js/imes/jszhuyin/jszhuyin.js
 apps/keyboard/js/imes/latin/latin.js
 apps/keyboard/js/imes/latin/predictions.js
 apps/keyboard/js/imes/latin/worker.js
-apps/keyboard/js/keyboard.js
 apps/keyboard/js/render.js
 apps/keyboard/js/settings/settings.js
 apps/keyboard/test/unit/jspinyin_test.js
@@ -265,7 +264,6 @@ apps/music/js/open.js
 apps/music/js/utils.js
 apps/music/test/unit/remote_controls_test.js
 apps/settings/js/about.js
-apps/settings/js/about_more_info.js
 apps/settings/js/airplane_mode.js
 apps/settings/js/bluetooth.js
 apps/settings/js/call.js
@@ -294,8 +292,7 @@ apps/settings/js/telephony_items_handler.js
 apps/settings/js/telephony_settings.js
 apps/settings/js/try_show_homescreen_section.js
 apps/settings/js/utils.js
-apps/settings/js/wifi.js
-apps/settings/js/wifi_select_certificate_file.js
+apps/settings/js/wallpaper.js
 apps/settings/test/marionette/app/regions/feedback.js
 apps/settings/test/marionette/app/regions/improve.js
 apps/settings/test/marionette/tests/improve_settings_test.js
@@ -307,7 +304,6 @@ apps/settings/test/unit/download_ui_test.js
 apps/settings/test/unit/downloads_list_test.js
 apps/settings/test/unit/hotspot_test.js
 apps/settings/test/unit/mock_navigator_settings.js
-apps/settings/test/unit/mock_settings.js
 apps/settings/test/unit/mock_template.js
 apps/settings/test/unit/sim_settings_helper_test.js
 apps/settings/test/unit/simcard_lock_test.js
@@ -342,7 +338,6 @@ apps/system/js/bluetooth_transfer.js
 apps/system/js/browser_config_helper.js
 apps/system/js/browser_frame.js
 apps/system/js/browser_mixin.js
-apps/system/js/captive_portal.js
 apps/system/js/carrier_info_notifier.js
 apps/system/js/cell_broadcast_system.js
 apps/system/js/crash_reporter.js
@@ -379,7 +374,6 @@ apps/system/js/utility_tray.js
 apps/system/js/value_selector/date_picker.js
 apps/system/js/value_selector/spin_date_picker.js
 apps/system/js/value_selector/value_picker.js
-apps/system/js/value_selector/value_selector.js
 apps/system/js/wifi.js
 apps/system/test/marionette/fakemusic/js/comms.js
 apps/system/test/marionette/fakemusic/js/fakemusic.js
@@ -389,19 +383,16 @@ apps/system/test/marionette/lib/system.js
 apps/system/test/marionette/lockscreen_disabled_test.js
 apps/system/test/marionette/media_playback_test.js
 apps/system/test/marionette/net_error_test.js
-apps/system/test/marionette/notification_get_test.js
 apps/system/test/marionette/notification_launch_app.js
 apps/system/test/marionette/notification_test.js
 apps/system/test/unit/app_install_manager_test.js
 apps/system/test/unit/battery_manager_test.js
 apps/system/test/unit/bluetooth_transfer_test.js
 apps/system/test/unit/browser_frame_test.js
-apps/system/test/unit/captive_portal_test.js
 apps/system/test/unit/carrier_info_notifier_test.js
 apps/system/test/unit/date_picker_test.js
 apps/system/test/unit/download_manager_test.js
 apps/system/test/unit/download_notification_test.js
-apps/system/test/unit/edge_swipe_detector_test.js
 apps/system/test/unit/entery_sheet_test.js
 apps/system/test/unit/fxa_client_test.js
 apps/system/test/unit/fxa_iac_client_test.js
@@ -419,7 +410,6 @@ apps/system/test/unit/fxa_test/screens/fxam_refresh_auth_test.js
 apps/system/test/unit/fxa_test/screens/fxam_set_password_test.js
 apps/system/test/unit/fxa_test/screens/fxam_signin_success_test.js
 apps/system/test/unit/fxa_test/screens/fxam_signup_success_test.js
-apps/system/test/unit/homescreen_launcher_test.js
 apps/system/test/unit/iac_handler_test.js
 apps/system/test/unit/identity_test.js
 apps/system/test/unit/keyboard_helper_test.js
@@ -441,7 +431,6 @@ apps/system/test/unit/mock_download_ui.js
 apps/system/test/unit/mock_ftu_launcher.js
 apps/system/test/unit/mock_fxa_client.js
 apps/system/test/unit/mock_fxa_ui.js
-apps/system/test/unit/mock_homescreen_launcher.js
 apps/system/test/unit/mock_homescreen_window.js
 apps/system/test/unit/mock_iac_handler.js
 apps/system/test/unit/mock_iachandler.js
@@ -467,7 +456,6 @@ apps/system/test/unit/orientation_manager_test.js
 apps/system/test/unit/quick_settings_test.js
 apps/system/test/unit/screen_manager_test.js
 apps/system/test/unit/settings_helper_test.js
-apps/system/test/unit/sheets_transition_test.js
 apps/system/test/unit/spin_date_picker_test.js
 apps/system/test/unit/storage_watcher_test.js
 apps/system/test/unit/updatable_test.js
