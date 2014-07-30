@@ -27,25 +27,29 @@ var BackupService = {
     navigator.mozId.watch({
       wantIssuer: 'firefox-accounts',
       onlogin: function(assertion) {
-        window.alert("logged in!");
         console.log('Got FxA assertion: ' + assertion);
 
-        var request = new Request(provider.url + '/browserid/login');
-        request.post({assertion: assertion}).then(
-          function success(result) {
-            switch (result.status) {
-              case 200:
-              case 201:
-              case 204:
-                resolve(self.receiveProvisionedCreds(
-                    account.accountId, result.responseText, provider));
-                break;
+        // var req = navigator.mozSettings.createLock()
+        //           .get(self.BACKUP_PROVIDERS);
+        // req.onsuccess = function() {
+          var request = new Request('http://moz.fruux.net/browserid/login');
+          request.post({assertion: assertion}).then(
+            function success(result) {
+              window.alert(result.responseText);
+              switch (result.status) {
+                case 200:
+                case 201:
+                case 204:
+                  // resolve(self.receiveProvisionedCreds(
+                  //     account.accountId, result.responseText, provider));
+                  break;
 
-              default:
-                reject(result.statusText);
-                break;
-            }
-          });
+                default:
+                  reject(result.statusText);
+                  break;
+              }
+            });
+        // };
       },
       onlogout: function() {
       },
@@ -115,11 +119,6 @@ var BackupService = {
     return new Promise(function (resolve, reject) {
       FxAccountsClient.getAccounts(function(account) {
         if (account && account.verified) {
-          self.getCurrentProvider(account.accountId).then(function(provider) {
-            FxAccountsClient.getAssertion(provider.url, {},
-              function (assertion) {
-              });
-          });
         }
       });
     });
