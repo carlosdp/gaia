@@ -152,7 +152,7 @@ var BackupService = {
     request.put(vcard).then(
       function onsuccess(result) {
         console.log('contact pushed: ' + result.statusText);
-        if (result.status !== 204) {
+        if (result.status !== 201) {
           // on 401, provision and try again
           console.log('got a ' + result.status + ' - will retry');
           // TODO: put a limit of 5 attempts on pushing a single contact
